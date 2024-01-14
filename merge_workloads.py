@@ -68,7 +68,7 @@ def create_sample_model_dict():
 
 def main():
 	model_dict = create_sample_model_dict()
-    merge_workload(model_dict)
+	merge_workload(model_dict)
 
 if __name__ == "__main__":
-    main()
+	main()
