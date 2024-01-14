@@ -4,8 +4,8 @@ import torchvision
 import torch.nn as nn
 from torchvision.models.detection import FasterRCNN, MaskRCNN, ssd300_vgg16, ssdlite320_mobilenet_v3_large
 from torchvision.models.detection.rpn import AnchorGenerator
-sys.path.append("../dataset_formation/PyTorch-YOLOv3")
-import yolo_model
+# sys.path.append("../dataset_formation/PyTorch-YOLOv3")
+# import yolo_model
 
 # All model architectures in the dataset (not trained, need to load weights separately to use)
 

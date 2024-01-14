@@ -18,14 +18,14 @@ class ModelMerger():
     def __init__(self, model_dict, results_path):  
         # Checks model dict format
         for entry in model_dict.keys():
-            model_entry = model_dict[entry]
-            assert('model' in model_entry)
-            assert('task' in model_entry)
-            assert('transforms' in model_entry)
-            transforms = model_entry['transforms']
+            model_info = model_dict[entry]
+            assert('model' in model_info)
+            assert('task' in model_info)
+            assert('transforms' in model_info)
+            transforms = model_info['transforms']
             assert('train' in transforms)
             assert('val' in transforms)
-            assert('unmerged_acc' in model_entry)
+            assert('unmerged_acc' in model_info)
             
         self.model_dict = model_dict
         self.results_path = results_path

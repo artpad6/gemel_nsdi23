@@ -12,7 +12,8 @@ from torchvision.ops import nms
 
 
 class DatasetManager():
-    """Forms datasets used for merging
+    """Forms dataset objects in the format expected for training
+       Expects data in format specified in README
     
     :param model_dict: dict with model info; parts needed here: task, transforms, phase (train or val)
     """
@@ -20,36 +21,35 @@ class DatasetManager():
         self.model_dict = model_dict
 
 
-    # since model_dict is an OrderedDict, we know that datasets will be in right order
+    # Since model_dict is an OrderedDict, we know that datasets will be in right order
     def datasets(self):
         dataset_list = []
         training_phases = ['train', 'val']
         for entry in self.model_dict.keys():
-            model_entry = self.model_dict[entry]
-            task = model_entry['task']
+            model_info = self.model_dict[entry]
+            task = model_info['task']
             dataset_dict = {}
             if task == 'object_detection':
                 for phase in training_phases:
                     dataset_dict[phase] = ObjectDetectionDataset(model_name=entry, 
-                        model_info=model_entry, training_phase=phase)
+                        model_info=model_info, training_phase=phase)
             elif task == 'image_classification':
                 for phase in training_phases:
                     dataset_dict[phase] = ImageClassificationDataset(model_name=entry,
-                        model_info=model_entry, training_phase=phase)
+                        model_info=model_info, training_phase=phase)
             dataset_list.append(dataset_dict)
         return dataset_list
 
     
-    # return index along with image and target
+    # Return index along with image and target
     def train_collate(self, batch):
         img = [item[0][0] for item in batch]
         target = [item[0][1] for item in batch]
         indexes = [item[1] for item in batch]
         return (img, target), indexes
     
-    # same as default collate except that targets might be different lengths so don't stack them
+    # Same as default collate except that targets might be different lengths so don't stack them
     def val_collate(self, batch):
-        # img = torch.stack([item[0] for item in batch])
         img = [item[0] for item in batch]
         target = [item[1] for item in batch]
         return img, target
@@ -57,14 +57,13 @@ class DatasetManager():
    
     def dataloaders(self, model_indexes, train_batch_size=2, val_batch_size=1):
         """Create dataloaders for joint training and validation. Train dataloader is a single loader that 
-        includes all images and targets for joint training (randomly sampling each batch). Validate separately 
-        # though, so val_loaders is a list of dataloaders, one per dataset
+        includes all images and targets for joint training (randomly sampling each batch). Validate happens separately 
+        # for each dataset though, so val_loaders is a list of dataloaders, one per dataset
         
         """
+        # Get the datasets used for this round of training
         datasets_all = self.datasets()
-
         selected_datasets = [datasets_all[i] for i in model_indexes]
-        
         
         train_loader = DataLoader(ConcatWithIndex([dataset['train'] for dataset in selected_datasets]), batch_size=train_batch_size,
                                                  shuffle=True, num_workers=0, collate_fn=self.train_collate)
@@ -75,7 +74,7 @@ class DatasetManager():
         
         
 class ConcatWithIndex(ConcatDataset):
-    """Concatenate all dataset and return image/target and dataset index so we can train differently for each dataset
+    """Concatenate all datasets and return image/target and dataset index so we can train differently for each dataset
     
     """
     def __init__(self, datasets):
@@ -99,6 +98,8 @@ class ObjectDetectionDataset():
     
     """
     def __init__(self, model_name, model_info, training_phase):
+        # Expects the last part of model_name to be the model type, e.g., frcnn in main_2nd_cars_frcnn
+        # Replaces the last part with OD because the dataset can be reused for different model types doing the same task
         dataset_parts = model_name.split('_')
         dataset_parts[-1] = 'OD'
         dataset_name = '_'.join(dataset_parts)
@@ -108,6 +109,7 @@ class ObjectDetectionDataset():
         # and ssd) require data in a different format (x-min, y-min, x-max, y-max)
         self.need_format_edit = ('frcnn' in model_name or 'ssd' in model_name)
         
+        # Get all properties ready to return when getitem is called
         self.transforms = model_info['transforms'][training_phase]
         self.images_path = os.path.join(dataset_path, f'{training_phase}', 'images')
         self.annotations_path = os.path.join(dataset_path, 
@@ -164,6 +166,8 @@ class ImageClassificationDataset(datasets.ImageFolder):
     
     """
     def __init__(self, model_name, model_info, training_phase):
+         # Expects the last part of model_name to be the model type, e.g., resnet50 in main_2nd_cars_people_resnet50
+        # Replaces the last part with CL because the dataset can be reused for different model types doing the same task
         dataset_parts = model_name.split('_')
         dataset_parts[-1] = 'CL'
         dataset_name = '_'.join(dataset_parts)

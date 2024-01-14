@@ -8,7 +8,7 @@ from coco_eval import CocoEvaluator
 from coco_utils import get_coco_api_from_dataset
 from joint_trainer import move_to_gpu
 
-sys.path.append("../dataset_formation/PyTorch-YOLOv3")
+# sys.path.append("../dataset_formation/PyTorch-YOLOv3")
 from utils.utils import *
 from utils.datasets import *
 
