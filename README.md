@@ -24,13 +24,13 @@ After setting this up and running, you’ll see training and validation output, 
 TODO: Add functionality to also store which layers were saved in the results folder in a format such that we can then piece the merged models back together using their new (shared) weights
 
 > [!NOTE]
-> This repo as is only supports models in the torchvision models library as of early 2022. To add other models, you can add them to model_architectures and add eval_methods and transforms. The models’ inputs and outputs must match torchvision models (see FasterRCNN [here](https://pytorch.org/vision/0.9/models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn).
+> This repo as is only supports models in the torchvision models library as of early 2022. To add other models, you can add them to model_architectures and add eval_methods and transforms. The models’ inputs and outputs must match torchvision models (see FasterRCNN [here](https://pytorch.org/vision/0.9/models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn).)
 
 We did this for YOLOv3 using the following steps:
 
 1. Clone [PyTorch-YOLOv3](https://github.com/eriklindernoren/PyTorch-YOLOv3)
 2. Rename models.py to yolo_model.py (to avoid name confusion when importing)
-3. Our models must take inputs and targets when training and just inputs when validating. They must return a loss dictionary (containing the key “loss”) if training and just the outputs if validating. Instead, this version of YOLOv3 took in inputs and gave back outputs, and if it was training, it calculated the loss in a separate function. The changes below adapt the forward method of this version of YOLOv3 to our specifications by having it also take targets, which could be None if validating, incorporating the loss calculation into running the model, and returning the loss dict if it’s training (i.e., targets is not None)
+3. Our models must take inputs and targets when training and just inputs when validating. They must return a loss dictionary (containing the key “loss”) if training and just the outputs if validating. Instead, this version of YOLOv3 took in inputs and gave back outputs, and if it was training, it calculated the loss in a separate function. The changes below adapt the forward method of YOLOv3 to our specifications by having it also take targets, which could be None if validating, incorporating the loss calculation into running the model, and returning the loss dict if it’s training (i.e., targets is not None)
 ````python
     def forward(self, x, targets=None):
         img_dim = x.shape[2]
@@ -52,4 +52,4 @@ We did this for YOLOv3 using the following steps:
         yolo_outputs = to_cpu(torch.cat(yolo_outputs, 1))
         return yolo_outputs if targets is None else {'loss': loss}
 ````
-4. We added the PyTorch-YOLOv3 path to eval_methods, transforms, and model_architectures. You can uncomment these if you choose to follow the above steps and use YOLOv3
+4. We added the PyTorch-YOLOv3 path to eval_methods, transforms, and model_architectures. You can uncomment these and change it to your path to the repo if you choose to follow the above steps and use YOLOv3
