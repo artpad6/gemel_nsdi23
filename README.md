@@ -24,32 +24,4 @@ After setting this up and running, you’ll see training and validation output, 
 TODO: Add functionality to also store which layers were saved in the results folder in a format such that we can then piece the merged models back together using their new (shared) weights
 
 > [!NOTE]
-> This repo as is only supports models in the torchvision models library as of early 2022. To add other models, you can add them to model_architectures and add eval_methods and transforms. The models’ inputs and outputs must match torchvision models (see FasterRCNN [here](https://pytorch.org/vision/0.9/models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn).)
-
-We did this for YOLOv3 using the following steps:
-
-1. Clone [PyTorch-YOLOv3](https://github.com/eriklindernoren/PyTorch-YOLOv3)
-2. Rename models.py to yolo_model.py (to avoid name confusion when importing)
-3. Our models must take inputs and targets when training and just inputs when validating. They must return a loss dictionary (containing the key “loss”) if training and just the outputs if validating. Instead, this version of YOLOv3 took in inputs and gave back outputs, and if it was training, it calculated the loss in a separate function. The changes below adapt the forward method of YOLOv3 to our specifications by having it also take targets, which could be None if validating, incorporating the loss calculation into running the model, and returning the loss dict if it’s training (i.e., targets is not None)
-````python
-    def forward(self, x, targets=None):
-        img_dim = x.shape[2]
-        loss = 0
-        layer_outputs, yolo_outputs = [], []
-        for i, (module_def, module) in enumerate(zip(self.module_defs, self.module_list)):
-            if module_def["type"] in ["convolutional", "upsample", "maxpool"]:
-                x = module(x)
-            elif module_def["type"] == "route":
-                x = torch.cat([layer_outputs[int(layer_i)] for layer_i in module_def["layers"].split(",")], 1)
-            elif module_def["type"] == "shortcut":
-                layer_i = int(module_def["from"])
-                x = layer_outputs[-1] + layer_outputs[layer_i]
-            elif module_def["type"] == "yolo":
-                x, layer_loss = module[0](x, targets, img_dim)
-                loss += layer_loss
-                yolo_outputs.append(x)
-            layer_outputs.append(x)
-        yolo_outputs = to_cpu(torch.cat(yolo_outputs, 1))
-        return yolo_outputs if targets is None else {'loss': loss}
-````
-4. We added the PyTorch-YOLOv3 path to eval_methods, transforms, and model_architectures. You can uncomment these and change it to your path to the repo if you choose to follow the above steps and use YOLOv3
+> This repo as is only supports models in the torchvision models library as of early 2022. To add other models, you can add them to model_architectures and add eval_methods and transforms. The models’ inputs and outputs must match torchvision models (see FasterRCNN [here](https://pytorch.org/vision/0.9/models.html#torchvision.models.detection.fasterrcnn_resnet50_fpn).) We did this for YOLOv3 by editing a version of [PyTorch-YOLOv3](https://github.com/eriklindernoren/PyTorch-YOLOv3) from early 2021. Please email arpadmanabhan@g.hmc.edu for more detail about this YOLOv3 implementation, but this code is not published because we do not maintain it.)
